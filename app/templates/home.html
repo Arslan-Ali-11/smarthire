@@ -1,0 +1,587 @@
+{% extends "base.html" %}
+
+{% block title %}SmartHire — AI-Powered Resume Screening & Interview Preparation{% endblock %}
+
+{% block content %}
+
+<!-- ==================== HERO SECTION ==================== -->
+<section class="hero-section" id="home">
+    <div class="hero-grid-overlay"></div>
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 hero-content">
+                <div class="hero-badge">
+                    <i class="bi bi-stars"></i>
+                    AI-Powered Hiring Platform
+                </div>
+                <h1 class="hero-title">
+                    Hire Smarter,<br>
+                    <span class="gradient-text">Not Harder.</span>
+                </h1>
+                <p class="hero-description">
+                    SmartHire uses Generative AI to screen resumes, rank candidates,
+                    and generate tailored interview questions — so you can focus on
+                    the people, not the paperwork.
+                </p>
+                <div class="hero-buttons">
+                    <a href="{{ url_for('auth.register') }}" class="btn-primary-custom">
+                        Start Free <i class="bi bi-arrow-right"></i>
+                    </a>
+                    <a href="#how-it-works" class="btn-outline-custom">
+                        <i class="bi bi-play-circle"></i> See How It Works
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="stat-number">95%</div>
+                        <div class="stat-label">Faster Screening</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="stat-number">10x</div>
+                        <div class="stat-label">More Efficient</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="stat-number">100%</div>
+                        <div class="stat-label">Free for Students</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="hero-image-wrapper">
+                    <div class="hero-image-card">
+                        <img src="https://images.unsplash.com/photo-1553877522-43269d4ea984?w=800&q=80"
+                             alt="Team collaborating on hiring decisions">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ==================== TRUSTED BY / STATS BAR ==================== -->
+<section class="stats-bar" id="stats-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-6 col-md-3">
+                <div class="stat-item">
+                    <div class="stat-value"><span class="gradient-text counter" data-target="500" data-suffix="+">0</span></div>
+                    <div class="stat-desc">Resumes Screened</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-item">
+                    <div class="stat-value"><span class="gradient-text counter" data-target="50" data-suffix="+">0</span></div>
+                    <div class="stat-desc">Companies Trust Us</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-item">
+                    <div class="stat-value"><span class="gradient-text counter" data-target="98" data-suffix="%">0</span></div>
+                    <div class="stat-desc">Accuracy Rate</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-item">
+                    <div class="stat-value"><span class="gradient-text">24/7</span></div>
+                    <div class="stat-desc">Always Available</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ==================== LATEST OPEN JOBS SECTION ==================== -->
+{% if latest_jobs %}
+<section class="section-padding bg-soft" id="latest-jobs">
+    <div class="container">
+        <div class="section-header fade-in-up">
+            <div class="section-label">
+                <i class="bi bi-briefcase-fill"></i> Fresh Openings
+            </div>
+            <h2 class="section-title">Latest Job Opportunities</h2>
+            <p class="section-subtitle">
+                Explore real roles posted by active recruiters. Upload your resume to receive AI match scoring in seconds.
+            </p>
+        </div>
+
+        <div class="row g-4">
+            {% for job in latest_jobs[:4] %}
+                <div class="col-md-6 col-lg-6 fade-in-up">
+                    <div class="card h-100 border-0 shadow-sm p-4" style="border-radius: var(--radius-lg); background: white;">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <h5 class="fw-bold mb-1">
+                                    <a href="{{ url_for('applicant.job_details', job_id=job.id) }}" class="text-dark text-decoration-none">
+                                        {{ job.title }}
+                                    </a>
+                                </h5>
+                                <div class="text-muted small">
+                                    <i class="bi bi-building me-1"></i>{{ job.recruiter.name }} &bull; {{ job.created_at.strftime('%b %d, %Y') }}
+                                </div>
+                            </div>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill small">
+                                {{ job.min_experience_years }} yr{{ 's' if job.min_experience_years != 1 else '' }} exp
+                            </span>
+                        </div>
+                        <p class="text-secondary small my-3" style="line-height: 1.6;">
+                            {{ job.description[:160] }}{% if job.description|length > 160 %}...{% endif %}
+                        </p>
+                        <div class="mb-4">
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for sk in job.get_skills_list()[:4] %}
+                                    <span class="badge bg-light text-dark border small">{{ sk }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                            <a href="{{ url_for('applicant.job_details', job_id=job.id) }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                View Details
+                            </a>
+                            {% if not current_user.is_authenticated %}
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#homeAuthModal{{ job.id }}">
+                                    <i class="bi bi-send me-1"></i> Apply Now
+                                </button>
+                            {% elif current_user.is_applicant() %}
+                                <a href="{{ url_for('applicant.job_details', job_id=job.id) }}" class="btn btn-sm btn-primary rounded-pill px-3">
+                                    <i class="bi bi-send me-1"></i> Apply Now
+                                </a>
+                            {% else %}
+                                <span class="badge bg-light text-muted border px-2 py-1">Recruiter</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guest Login Modal for this job -->
+                {% if not current_user.is_authenticated %}
+                    <div class="modal fade" id="homeAuthModal{{ job.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow-lg text-center p-4" style="border-radius: var(--radius-xl);">
+                                <div class="mx-auto rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px; background: var(--primary-bg); color: var(--primary);">
+                                    <i class="bi bi-person-lock fs-2"></i>
+                                </div>
+                                <h4 class="fw-bold mb-2">Sign In to Apply</h4>
+                                <p class="text-muted small mb-4">
+                                    Please log in as an applicant to apply for <strong>"{{ job.title }}"</strong>.
+                                </p>
+                                <div class="d-grid gap-2">
+                                    <a href="{{ url_for('auth.login', next=url_for('applicant.job_details', job_id=job.id)) }}" class="btn btn-primary rounded-pill py-2.5 fw-semibold">
+                                        <i class="bi bi-box-arrow-in-right me-1"></i> Log In
+                                    </a>
+                                    <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary rounded-pill py-2.5 fw-semibold">
+                                        <i class="bi bi-person-plus me-1"></i> Create Free Account
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- See More Button -->
+        <div class="text-center mt-5">
+            <a href="{{ url_for('applicant.browse_jobs') }}" class="btn-primary-custom" style="padding: 0.9rem 2.25rem;">
+                See All Open Positions <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+
+<!-- ==================== FEATURES SECTION ==================== -->
+<section class="section-padding" id="features">
+    <div class="container">
+        <div class="section-header fade-in-up">
+            <div class="section-label">
+                <i class="bi bi-grid-fill"></i> Features
+            </div>
+            <h2 class="section-title">Everything You Need to<br>Hire the Best Talent</h2>
+            <p class="section-subtitle">
+                From AI-powered resume parsing to automated email notifications,
+                SmartHire handles the entire screening pipeline.
+            </p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4 fade-in-up">
+                <div class="feature-card">
+                    <div class="feature-icon purple">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <h5>Smart Resume Parsing</h5>
+                    <p>Upload PDF or DOCX resumes and our AI automatically extracts skills, education, experience, and projects into structured data.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 fade-in-up">
+                <div class="feature-card">
+                    <div class="feature-icon cyan">
+                        <i class="bi bi-bar-chart-line"></i>
+                    </div>
+                    <h5>AI Match Scoring</h5>
+                    <p>Each candidate is scored 0–100 against the job requirements with a clear explanation of strengths and skill gaps.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 fade-in-up">
+                <div class="feature-card">
+                    <div class="feature-icon green">
+                        <i class="bi bi-chat-square-quote"></i>
+                    </div>
+                    <h5>Interview Questions</h5>
+                    <p>Automatically generate tailored technical and behavioral interview questions for each shortlisted candidate.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 fade-in-up">
+                <div class="feature-card">
+                    <div class="feature-icon amber">
+                        <i class="bi bi-envelope-check"></i>
+                    </div>
+                    <h5>Auto Notifications</h5>
+                    <p>Applicants receive automated emails when their application is received, shortlisted, or rejected. No manual follow-ups.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 fade-in-up">
+                <div class="feature-card">
+                    <div class="feature-icon rose">
+                        <i class="bi bi-lightbulb"></i>
+                    </div>
+                    <h5>Resume Feedback</h5>
+                    <p>Applicants get AI-powered suggestions on how to improve their resume for the specific role they applied to.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 fade-in-up">
+                <div class="feature-card">
+                    <div class="feature-icon blue">
+                        <i class="bi bi-download"></i>
+                    </div>
+                    <h5>Export Reports</h5>
+                    <p>Export ranked candidate lists as CSV or PDF reports with match scores, skills breakdown, and status summaries.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ==================== SHOWCASE SECTION 1 ==================== -->
+<section class="section-padding bg-soft showcase-section">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 fade-in-up">
+                <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&q=80"
+                     alt="Recruiter reviewing candidates on laptop"
+                     class="showcase-image">
+            </div>
+            <div class="col-lg-6 fade-in-up">
+                <div class="showcase-text">
+                    <div class="section-label">
+                        <i class="bi bi-person-workspace"></i> For Recruiters
+                    </div>
+                    <h3>Streamline Your Entire Hiring Workflow</h3>
+                    <p>
+                        Post jobs, receive applications, and let AI do the heavy lifting.
+                        Review a ranked list of candidates instead of reading through
+                        hundreds of resumes manually.
+                    </p>
+                    <ul class="check-list">
+                        <li><i class="bi bi-check-circle-fill"></i> Create and manage job postings in seconds</li>
+                        <li><i class="bi bi-check-circle-fill"></i> AI-ranked candidates with match scores</li>
+                        <li><i class="bi bi-check-circle-fill"></i> One-click shortlist, reject, or hold decisions</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Daily email summaries of new applications</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Dashboard with hiring analytics</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ==================== SHOWCASE SECTION 2 ==================== -->
+<section class="section-padding showcase-section">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 order-lg-2 fade-in-up">
+                <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80"
+                     alt="Students preparing for interviews"
+                     class="showcase-image">
+            </div>
+            <div class="col-lg-6 order-lg-1 fade-in-up">
+                <div class="showcase-text">
+                    <div class="section-label">
+                        <i class="bi bi-mortarboard"></i> For Applicants
+                    </div>
+                    <h3>Apply Smarter, Get Real Feedback</h3>
+                    <p>
+                        Browse open positions, upload your resume, and get instant
+                        AI feedback on how to improve it. Track your application
+                        status in real time.
+                    </p>
+                    <ul class="check-list">
+                        <li><i class="bi bi-check-circle-fill"></i> Browse and apply to jobs with one upload</li>
+                        <li><i class="bi bi-check-circle-fill"></i> AI-powered resume improvement tips</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Real-time application status tracking</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Email notifications at every step</li>
+                        <li><i class="bi bi-check-circle-fill"></i> 100% free — no hidden costs</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ==================== HOW IT WORKS ==================== -->
+<section class="section-padding bg-soft" id="how-it-works">
+    <div class="container">
+        <div class="section-header fade-in-up">
+            <div class="section-label">
+                <i class="bi bi-diagram-3"></i> How It Works
+            </div>
+            <h2 class="section-title">Three Simple Steps to<br>Better Hiring</h2>
+            <p class="section-subtitle">
+                SmartHire automates the tedious parts of resume screening
+                so you can focus on meeting the right people.
+            </p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4 fade-in-up">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h5>Post a Job</h5>
+                    <p>Create a job posting with a title, description, required skills, and minimum experience. It takes less than two minutes.</p>
+                    <div class="step-connector d-none d-md-block"></div>
+                </div>
+            </div>
+            <div class="col-md-4 fade-in-up">
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h5>Collect Resumes</h5>
+                    <p>Applicants browse your open jobs and upload their resume. SmartHire extracts and parses the content automatically.</p>
+                    <div class="step-connector d-none d-md-block"></div>
+                </div>
+            </div>
+            <div class="col-md-4 fade-in-up">
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h5>AI Scores & Ranks</h5>
+                    <p>Our AI compares each resume to your requirements, scores them 0–100, and generates interview questions for the top candidates.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ==================== SHOWCASE IMAGE BREAK ==================== -->
+<section class="py-0">
+    <div class="container-fluid px-0">
+        <div style="height: 400px; overflow: hidden; position: relative;">
+            <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1400&q=80"
+                 alt="Modern office team meeting"
+                 style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7);">
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center;">
+                <div>
+                    <h2 style="color: white; font-size: 2.5rem; font-weight: 900; letter-spacing: -0.02em;">
+                        Built for Teams That Move Fast
+                    </h2>
+                    <p style="color: rgba(255,255,255,0.7); font-size: 1.15rem; max-width: 500px; margin: 0.75rem auto 0;">
+                        Small companies, placement offices, and student societies — all powered by AI.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ==================== FAQ SECTION ==================== -->
+<section class="section-padding faq-section" id="faq">
+    <div class="container">
+        <div class="section-header fade-in-up">
+            <div class="section-label">
+                <i class="bi bi-question-circle"></i> FAQ
+            </div>
+            <h2 class="section-title">Frequently Asked Questions</h2>
+            <p class="section-subtitle">
+                Everything you need to know about SmartHire. Can't find the answer
+                you're looking for? Feel free to contact our team.
+            </p>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8 fade-in-up">
+                <div class="accordion" id="faqAccordion">
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                Is SmartHire really free?
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Yes! SmartHire is 100% free for students, universities, and small companies. We use free-tier APIs from Google Gemini and Groq, an SQLite database, and free hosting options like PythonAnywhere or Render. There are no hidden costs or premium plans.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                What AI model does SmartHire use?
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                SmartHire uses the Google Gemini API (free tier) as its primary AI engine for resume parsing, scoring, and question generation. If the Gemini API hits its rate limit, the system automatically falls back to the Groq API (also free). You can also use Ollama with a local model for offline development.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                What file formats are supported for resumes?
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                SmartHire supports <strong>PDF</strong> and <strong>DOCX</strong> file formats. Files are limited to 5 MB. The system uses PyMuPDF for PDF extraction and python-docx for Word documents to ensure accurate text parsing.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                How does the AI match scoring work?
+                            </button>
+                        </h2>
+                        <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                When an applicant submits their resume, the AI parses it into structured fields (skills, education, experience, projects) and compares them against the job description and required skills. It then assigns a score from 0 to 100 with a short explanation highlighting matching skills and identifying gaps.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+                                Can applicants see their match score?
+                            </button>
+                        </h2>
+                        <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Applicants don't see their raw match score — that's only visible to recruiters. However, applicants do receive AI-generated feedback on how to improve their resume for the specific role they applied to, helping them strengthen future applications.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6">
+                                Is my resume data secure?
+                            </button>
+                        </h2>
+                        <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Yes. Resumes are stored locally on the server and are only accessible to the recruiter who posted the job. Passwords are hashed using industry-standard algorithms, and all forms are CSRF-protected. We never share your data with third parties.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ==================== CTA SECTION ==================== -->
+<section class="cta-section">
+    <div class="cta-content fade-in-up">
+        <h2>Ready to Transform<br>Your Hiring Process?</h2>
+        <p>Join hundreds of companies already using SmartHire to find the perfect candidates faster.</p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="{{ url_for('auth.register') }}" class="btn-primary-custom" style="font-size: 1.05rem; padding: 1rem 2.5rem;">
+                Create Free Account <i class="bi bi-arrow-right"></i>
+            </a>
+            <a href="#features" class="btn-outline-custom" style="font-size: 1.05rem; padding: 0.95rem 2.5rem;">
+                Learn More
+            </a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // ========== Counter Animation (Replays every time scrolled into view) ==========
+    let animationFrames = {};
+
+    function animateCounters() {
+        const counters = document.querySelectorAll('.counter');
+        counters.forEach((counter, idx) => {
+            const target = parseInt(counter.getAttribute('data-target'), 10);
+            const suffix = counter.getAttribute('data-suffix') || '';
+            const duration = 1600; // 1.6s
+            let startTimestamp = null;
+
+            if (animationFrames[idx]) {
+                window.cancelAnimationFrame(animationFrames[idx]);
+            }
+
+            function step(timestamp) {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                // Cubic ease-out: starts fast, smoothly settles at the final number
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                const currentVal = Math.floor(easeOut * target);
+
+                counter.textContent = currentVal + suffix;
+
+                if (progress < 1) {
+                    animationFrames[idx] = window.requestAnimationFrame(step);
+                } else {
+                    counter.textContent = target + suffix;
+                }
+            }
+
+            animationFrames[idx] = window.requestAnimationFrame(step);
+        });
+    }
+
+    function resetCounters() {
+        const counters = document.querySelectorAll('.counter');
+        counters.forEach((counter, idx) => {
+            if (animationFrames[idx]) {
+                window.cancelAnimationFrame(animationFrames[idx]);
+            }
+            const suffix = counter.getAttribute('data-suffix') || '';
+            counter.textContent = '0' + suffix;
+        });
+    }
+
+    // Observe stats section so animation triggers every time it enters the viewport
+    const statsSection = document.getElementById('stats-section');
+    if (statsSection) {
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateCounters();
+                } else {
+                    resetCounters();
+                }
+            });
+        }, { threshold: 0.2 });
+
+        counterObserver.observe(statsSection);
+    }
+</script>
+{% endblock %}

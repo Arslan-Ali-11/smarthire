@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}User Management — Admin | SmartHire{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                    <i class="bi bi-arrow-left me-1"></i> Admin Dashboard
+                </a>
+                <span class="badge bg-primary-subtle text-primary px-3 py-1.5 rounded-pill fw-semibold">
+                    {{ users|length }} User Accounts
+                </span>
+            </div>
+            <h1 class="mb-1">User Account Management</h1>
+            <p class="text-secondary mb-0">Control roles, permissions, and accounts across recruiters, candidates, and admins</p>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filters -->
+<div class="content-card mb-4 p-3">
+    <form method="GET" action="{{ url_for('admin.users') }}" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0 text-secondary">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" name="search" class="form-control border-start-0 ps-0" 
+                       placeholder="Search by name or email..." value="{{ search }}">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select name="role" class="form-select" onchange="this.form.submit()">
+                <option value="">All Roles</option>
+                <option value="recruiter" {% if role_filter == 'recruiter' %}selected{% endif %}>Recruiters</option>
+                <option value="applicant" {% if role_filter == 'applicant' %}selected{% endif %}>Applicants</option>
+                <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Administrators</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary-custom w-100" style="padding: 0.5rem 1rem;">Filter</button>
+            {% if search or role_filter %}
+                <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary">Reset</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Users Table -->
+<div class="content-card mb-4">
+    <div class="card-body p-0">
+        {% if users %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">User</th>
+                            <th>Email Address</th>
+                            <th>Role</th>
+                            <th>Joined</th>
+                            <th>Jobs / Apps</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-primary fw-bold" style="width: 36px; height: 36px;">
+                                            {{ u.name[:1]|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ u.name }}</div>
+                                            {% if u.id == current_user.id %}
+                                                <small class="text-info fw-semibold">(You)</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="text-secondary small">{{ u.email }}</span>
+                                </td>
+                                <td>
+                                    {% if u.role == 'admin' %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1 rounded-pill fw-semibold">
+                                            <i class="bi bi-shield-lock me-1"></i>Admin
+                                        </span>
+                                    {% elif u.role == 'recruiter' %}
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2.5 py-1 rounded-pill fw-semibold">
+                                            <i class="bi bi-building me-1"></i>Recruiter
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill fw-semibold">
+                                            <i class="bi bi-person me-1"></i>Applicant
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ u.created_at.strftime('%b %d, %Y') }}</small>
+                                </td>
+                                <td>
+                                    <small class="text-secondary">
+                                        {% if u.role == 'recruiter' %}
+                                            {{ u.jobs|length }} Jobs Posted
+                                        {% else %}
+                                            {{ u.applications|length }} Applications
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-inline-flex gap-1">
+                                        <!-- Edit Role Button -->
+                                        <button class="btn btn-sm btn-outline-primary rounded-pill px-2.5" 
+                                                data-bs-toggle="modal" data-bs-target="#editRoleModal{{ u.id }}">
+                                            <i class="bi bi-pencil-square me-1"></i>Role
+                                        </button>
+
+                                        <!-- Delete Button (disabled for self) -->
+                                        {% if u.id != current_user.id %}
+                                            <button class="btn btn-sm btn-outline-danger rounded-pill px-2.5" 
+                                                    data-bs-toggle="modal" data-bs-target="#deleteUserModal{{ u.id }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="bi bi-people"></i>
+                <h6>No users found</h6>
+                <p>Try adjusting your search criteria or role filters.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modals outside tables to prevent z-index freeze -->
+{% for u in users %}
+    <!-- Role Edit Modal -->
+    <div class="modal fade" id="editRoleModal{{ u.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-start">
+                <form method="POST" action="{{ url_for('admin.update_user_role', user_id=u.id) }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Change Role for {{ u.name }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-secondary small">
+                            Update the system permissions for <strong>{{ u.email }}</strong>:
+                        </p>
+                        <div class="mb-3">
+                            <label class="form-label text-dark fw-semibold">Select New Role</label>
+                            <select name="role" class="form-select">
+                                <option value="applicant" {% if u.role == 'applicant' %}selected{% endif %}>Applicant (Candidate)</option>
+                                <option value="recruiter" {% if u.role == 'recruiter' %}selected{% endif %}>Recruiter (Hiring Manager)</option>
+                                <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>Administrator (Full Access)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete User Modal -->
+    {% if u.id != current_user.id %}
+        <div class="modal fade" id="deleteUserModal{{ u.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content text-start">
+                    <form method="POST" action="{{ url_for('admin.delete_user', user_id=u.id) }}">
+                        <div class="modal-header">
+                            <h5 class="modal-title text-danger">Delete User Account</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-dark">
+                                Are you sure you want to permanently delete account <strong>{{ u.name }}</strong> ({{ u.email }})?
+                            </p>
+                            <p class="text-danger small mb-0">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                This will also permanently remove all jobs, applications, and resumes associated with this user. This action cannot be undone.
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endfor %}
+{% endblock %}

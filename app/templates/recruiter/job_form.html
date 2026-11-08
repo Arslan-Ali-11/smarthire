@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} — SmartHire{% endblock %}
+
+{% block content %}
+<div class="auth-page" style="padding-top: 6.5rem; background: var(--gray-100);">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Breadcrumb -->
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <a href="{{ url_for('recruiter.dashboard') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                    </a>
+                </div>
+
+                <div class="card shadow-sm border-0" style="border-radius: var(--radius-lg); overflow: hidden;">
+                    <div style="background: var(--gradient-hero); padding: 1.75rem 2rem; color: white;">
+                        <h3 class="fw-bold mb-1" style="color: white;">
+                            <i class="bi bi-briefcase me-2 text-primary-light"></i>{{ title }}
+                        </h3>
+                        <p class="mb-0" style="color: rgba(255,255,255,0.7); font-size: 0.95rem;">
+                            {% if is_edit %}
+                                Update the details for this position.
+                            {% else %}
+                                Define the role, required skills, and minimum experience for AI screening.
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="card-body p-4 p-md-5">
+                        <form method="POST" novalidate>
+                            {{ form.hidden_tag() }}
+
+                            <!-- Job Title -->
+                            <div class="mb-4">
+                                <label for="title" class="form-label fw-bold">{{ form.title.label.text }} <span class="text-danger">*</span></label>
+                                {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else ""), id="title") }}
+                                <small class="text-muted">A clear, standard role title helps candidates find your posting.</small>
+                                {% for error in form.title.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Description -->
+                            <div class="mb-4">
+                                <label for="description" class="form-label fw-bold">{{ form.description.label.text }} <span class="text-danger">*</span></label>
+                                {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), id="description") }}
+                                <small class="text-muted">Describe the key responsibilities, expectations, and culture. The AI uses this to calculate candidate match scores.</small>
+                                {% for error in form.description.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <!-- Required Skills -->
+                                <div class="col-md-8">
+                                    <label for="required_skills" class="form-label fw-bold">{{ form.required_skills.label.text }} <span class="text-danger">*</span></label>
+                                    {{ form.required_skills(class="form-control" + (" is-invalid" if form.required_skills.errors else ""), id="required_skills") }}
+                                    <small class="text-muted">Separate skills by comma. E.g. <code>Python, Flask, Docker, REST APIs, SQL</code></small>
+                                    {% for error in form.required_skills.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- Min Experience -->
+                                <div class="col-md-4">
+                                    <label for="min_experience_years" class="form-label fw-bold">{{ form.min_experience_years.label.text }}</label>
+                                    {{ form.min_experience_years(class="form-control" + (" is-invalid" if form.min_experience_years.errors else ""), id="min_experience_years", type="number", min="0") }}
+                                    <small class="text-muted">Years required (0 for internships/entry-level).</small>
+                                    {% for error in form.min_experience_years.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="mb-4">
+                                <label for="status" class="form-label fw-bold">{{ form.status.label.text }}</label>
+                                {{ form.status(class="form-select" + (" is-invalid" if form.status.errors else ""), id="status") }}
+                                <small class="text-muted">Closed postings will not accept new applications.</small>
+                                {% for error in form.status.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Buttons -->
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                                <a href="{{ url_for('recruiter.dashboard') }}" class="btn btn-outline-secondary">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="btn-primary-custom" style="padding: 0.75rem 2rem;">
+                                    <i class="bi bi-check-lg me-1"></i> {{ "Update Job" if is_edit else "Publish Job Posting" }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}

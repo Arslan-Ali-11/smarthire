@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.title }} — Job Details{% endblock %}
+
+{% block content %}
+<div class="auth-page" style="padding-top: 6.5rem; background: var(--gray-100);">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <!-- Back Link -->
+                <div class="mb-3">
+                    <a href="{{ url_for('applicant.browse_jobs') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Open Jobs
+                    </a>
+                </div>
+
+                <!-- Main Details Card -->
+                <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: var(--radius-xl);">
+                    <!-- Header -->
+                    <div style="background: var(--gradient-hero); padding: 2.5rem 2rem; color: white;">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                            <div>
+                                <span class="badge bg-white bg-opacity-15 text-white border-0 px-3 py-1 rounded-pill mb-2">
+                                    <i class="bi bi-briefcase me-1"></i>Full-time / Internship
+                                </span>
+                                <h2 class="fw-bold mb-1" style="color: white;">{{ job.title }}</h2>
+                                <div class="text-white-50 small">
+                                    <i class="bi bi-person me-1"></i>Posted by <strong>{{ job.recruiter.name }}</strong>
+                                    <span class="mx-2">&bull;</span>
+                                    <i class="bi bi-calendar3 me-1"></i>{{ job.created_at.strftime('%B %d, %Y') }}
+                                </div>
+                            </div>
+
+                            {% if job.status == 'open' %}
+                                <span class="badge bg-success-subtle text-success px-3 py-1.5 rounded-pill">Open</span>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary px-3 py-1.5 rounded-pill">Closed</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card-body p-4 p-md-5">
+                        <div class="row g-4">
+                            <!-- Left: Job Details & Responsibilities -->
+                            <div class="col-lg-8">
+                                <h5 class="fw-bold text-dark mb-3">About the Position</h5>
+                                <div class="text-secondary" style="white-space: pre-line; line-height: 1.7; font-size: 0.95rem;">
+                                    {{ job.description }}
+                                </div>
+
+                                <hr class="my-4">
+
+                                <h5 class="fw-bold text-dark mb-3">Required Technical Skills</h5>
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% for skill in job.get_skills_list() %}
+                                        <span class="badge bg-light text-primary border px-3 py-2 fs-6 fw-normal" style="border-radius: var(--radius-sm);">
+                                            <i class="bi bi-check2 text-primary me-1"></i>{{ skill }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Right: Key Highlights & Application Panel -->
+                            <div class="col-lg-4">
+                                <div class="card bg-light border-0 p-4 rounded-4">
+                                    <h6 class="fw-bold text-dark mb-3">Role Overview</h6>
+                                    <ul class="list-unstyled small text-muted mb-4">
+                                        <li class="mb-2">
+                                            <i class="bi bi-clock-history text-primary me-2"></i>
+                                            Min Experience: <strong>{{ job.min_experience_years }} yr{{ 's' if job.min_experience_years != 1 else '' }}</strong>
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="bi bi-person-check text-primary me-2"></i>
+                                            Recruiter: <strong>{{ job.recruiter.name }}</strong>
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="bi bi-file-earmark-check text-primary me-2"></i>
+                                            Format: <strong>PDF or DOCX</strong>
+                                        </li>
+                                    </ul>
+
+                                    {% if user_application %}
+                                        <!-- Already Applied Banner -->
+                                        <div class="alert alert-success border-0 text-center mb-0 p-3">
+                                            <i class="bi bi-check-circle-fill fs-3 text-success d-block mb-1"></i>
+                                            <div class="fw-bold">Applied Successfully</div>
+                                            <small class="text-muted">Status: <strong>{{ user_application.status|capitalize }}</strong></small>
+                                            <div class="mt-2">
+                                                <a href="{{ url_for('applicant.dashboard') }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                                                    View Status in Dashboard
+                                                </a>
+                                            </div>
+                                        </div>
+                                    {% elif job.status != 'open' %}
+                                        <div class="alert alert-secondary border-0 text-center mb-0">
+                                            <i class="bi bi-lock-fill fs-4 d-block mb-1"></i>
+                                            Position Closed
+                                        </div>
+                                    {% elif not current_user.is_authenticated %}
+                                        <!-- Guest apply button -->
+                                        <button type="button" class="btn btn-primary rounded-pill w-100 py-2.5 fw-semibold" data-bs-toggle="modal" data-bs-target="#authRequiredModal">
+                                            <i class="bi bi-send me-1"></i> Apply for this Job
+                                        </button>
+                                    {% elif current_user.is_applicant() %}
+                                        <!-- Applicant Apply Upload Form -->
+                                        <form method="POST" action="{{ url_for('applicant.apply_job', job_id=job.id) }}" enctype="multipart/form-data">
+                                            <div class="mb-3 text-start">
+                                                <label class="form-label fw-bold small">Upload Your Resume</label>
+                                                <input type="file" name="resume" class="form-control form-control-sm" accept=".pdf,.docx" required>
+                                                <div class="form-text small" style="font-size: 0.75rem;">PDF or DOCX only (≤ 5MB)</div>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary rounded-pill w-100 py-2 fw-semibold">
+                                                <i class="bi bi-send me-1"></i> Submit Application
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <div class="badge bg-light text-muted border p-2 text-center d-block">
+                                            Recruiter Account
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== Auth Modal for Guests ==================== -->
+<div class="modal fade" id="authRequiredModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg text-center p-4" style="border-radius: var(--radius-xl);">
+            <div class="mx-auto rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px; background: var(--primary-bg); color: var(--primary);">
+                <i class="bi bi-person-lock fs-2"></i>
+            </div>
+            <h4 class="fw-bold mb-2">Sign In to Apply</h4>
+            <p class="text-muted small mb-4">
+                Please log in as an applicant to apply for <strong>"{{ job.title }}"</strong>.
+            </p>
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('auth.login', next=url_for('applicant.job_details', job_id=job.id)) }}" class="btn btn-primary rounded-pill py-2.5 fw-semibold">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Log In
+                </a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary rounded-pill py-2.5 fw-semibold">
+                    <i class="bi bi-person-plus me-1"></i> Create Free Account
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

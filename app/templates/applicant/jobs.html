@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Explore Open Jobs — SmartHire{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="dashboard-header" style="padding-bottom: 3.5rem;">
+    <div class="container" style="padding-top: 4.5rem;">
+        <div class="text-center max-w-700 mx-auto">
+            <span class="badge bg-primary bg-opacity-25 text-white border border-white border-opacity-25 px-3 py-1.5 rounded-pill mb-2">
+                <i class="bi bi-stars me-1"></i> Live Opportunities
+            </span>
+            <h2 class="text-white fw-bold mb-2">Find Your Next Role</h2>
+            <p class="text-white-50 mb-4" style="max-width: 580px; margin: 0 auto;">
+                Explore positions screened by AI. Upload your resume to receive instantaneous match scoring and role-specific feedback.
+            </p>
+
+            <!-- Search Form -->
+            <form method="GET" class="card border-0 shadow-lg p-2 rounded-pill mx-auto" style="max-width: 680px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);">
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-7">
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-0 text-muted ps-3"><i class="bi bi-search"></i></span>
+                            <input type="text" name="search" class="form-control border-0 bg-transparent shadow-none" placeholder="Job title, keywords, or skills (e.g. Python, SQL)..." value="{{ search }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <select name="exp" class="form-select border-0 bg-transparent text-secondary shadow-none">
+                            <option value="">Any Experience</option>
+                            <option value="0" {{ 'selected' if exp_filter == '0' else '' }}>Internship (0 yrs)</option>
+                            <option value="2" {{ 'selected' if exp_filter == '2' else '' }}>Junior (≤ 2 yrs)</option>
+                            <option value="5" {{ 'selected' if exp_filter == '5' else '' }}>Mid-Level (≤ 5 yrs)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 col-6">
+                        <button type="submit" class="btn btn-primary rounded-pill w-100 fw-semibold">Search</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Jobs Grid Container -->
+<div class="container dashboard-body">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h5 class="fw-bold text-dark mb-0">Open Positions ({{ jobs|length }})</h5>
+            {% if search or exp_filter %}
+                <small class="text-muted">Showing filtered results &bull; <a href="{{ url_for('applicant.browse_jobs') }}" class="text-decoration-none">Clear filters</a></small>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if jobs %}
+        <div class="row g-4">
+            {% for job in jobs %}
+                <div class="col-lg-6">
+                    <div class="card h-100 border-0 shadow-sm p-4" style="border-radius: var(--radius-lg); transition: transform 0.2s, box-shadow 0.2s;">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <h5 class="fw-bold text-dark mb-1">
+                                    <a href="{{ url_for('applicant.job_details', job_id=job.id) }}" class="text-dark text-decoration-none">
+                                        {{ job.title }}
+                                    </a>
+                                </h5>
+                                <div class="text-muted small">
+                                    <i class="bi bi-building me-1"></i>Posted by <strong>{{ job.recruiter.name }}</strong>
+                                    <span class="mx-1">&bull;</span>
+                                    <i class="bi bi-calendar3 me-1"></i>{{ job.created_at.strftime('%b %d, %Y') }}
+                                </div>
+                            </div>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill small">
+                                <i class="bi bi-clock-history me-1"></i>{{ job.min_experience_years }} yr{{ 's' if job.min_experience_years != 1 else '' }} exp
+                            </span>
+                        </div>
+
+                        <!-- Description Snippet -->
+                        <p class="text-secondary small my-3" style="line-height: 1.6;">
+                            {{ job.description[:180] }}{% if job.description|length > 180 %}...{% endif %}
+                        </p>
+
+                        <!-- Required Skills Tags -->
+                        <div class="mb-4">
+                            <small class="text-muted d-block mb-1 fw-semibold">Required Skills:</small>
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for skill in job.get_skills_list()[:5] %}
+                                    <span class="badge bg-light text-dark border small">{{ skill }}</span>
+                                {% endfor %}
+                                {% if job.get_skills_list()|length > 5 %}
+                                    <span class="badge bg-light text-muted border small">+{{ job.get_skills_list()|length - 5 }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Card Footer / Actions -->
+                        <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                            <a href="{{ url_for('applicant.job_details', job_id=job.id) }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                View Details
+                            </a>
+
+                            {% if not current_user.is_authenticated %}
+                                <!-- Unauthenticated Visitor: Trigger Sign In Prompt Modal -->
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#authRequiredModal">
+                                    <i class="bi bi-send me-1"></i> Apply Now
+                                </button>
+                            {% elif current_user.is_applicant() %}
+                                {% if job.id in applied_map %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Applied ({{ applied_map[job.id]|capitalize }})
+                                    </span>
+                                {% else %}
+                                    <!-- Authenticated Applicant: Open Resume Upload Modal -->
+                                    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#applyJobModal{{ job.id }}">
+                                        <i class="bi bi-send me-1"></i> Apply Now
+                                    </button>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-light text-muted border px-2 py-1">Recruiter Account</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="content-card">
+            <div class="card-body p-5 text-center">
+                <i class="bi bi-briefcase text-muted" style="font-size: 3rem;"></i>
+                <h5 class="fw-bold mt-3">No Open Positions Found</h5>
+                <p class="text-muted small">
+                    {% if search or exp_filter %}
+                        No jobs matched your query. Try broadening your keywords.
+                    {% else %}
+                        No recruiter has published an open position yet. Check back soon!
+                    {% endif %}
+                </p>
+                {% if search or exp_filter %}
+                    <a href="{{ url_for('applicant.browse_jobs') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                        View All Positions
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- ==================== Auth Required Modal (For Guests) ==================== -->
+<div class="modal fade" id="authRequiredModal" tabindex="-1" aria-labelledby="authRequiredModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg text-center p-4" style="border-radius: var(--radius-xl);">
+            <div class="mx-auto rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px; background: var(--primary-bg); color: var(--primary);">
+                <i class="bi bi-person-lock fs-2"></i>
+            </div>
+            <h4 class="fw-bold mb-2">Sign In to Apply</h4>
+            <p class="text-muted small mb-4">
+                Please log in as an applicant to upload your resume and apply. It takes less than 30 seconds to create a free account!
+            </p>
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('auth.login', next=url_for('applicant.browse_jobs')) }}" class="btn btn-primary rounded-pill py-2.5 fw-semibold">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Log In to Apply
+                </a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary rounded-pill py-2.5 fw-semibold">
+                    <i class="bi bi-person-plus me-1"></i> Create Free Account
+                </a>
+            </div>
+            <button type="button" class="btn btn-link text-muted text-decoration-none small mt-3" data-bs-dismiss="modal">
+                Continue Browsing
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== Apply Modals (One per job for Applicants) ==================== -->
+{% if current_user.is_authenticated and current_user.is_applicant() %}
+    {% for job in jobs %}
+        {% if job.id not in applied_map %}
+            <div class="modal fade" id="applyJobModal{{ job.id }}" tabindex="-1" aria-labelledby="applyJobModalLabel{{ job.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-xl);">
+                        <div class="modal-header border-0 pb-0 pt-4 px-4">
+                            <div>
+                                <h5 class="fw-bold mb-1" id="applyJobModalLabel{{ job.id }}">Apply for {{ job.title }}</h5>
+                                <p class="text-muted small mb-0">Posted by {{ job.recruiter.name }}</p>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <form method="POST" action="{{ url_for('applicant.apply_job', job_id=job.id) }}" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Upload Your Resume <span class="text-danger">*</span></label>
+                                    <input type="file" name="resume" class="form-control" accept=".pdf,.docx" required>
+                                    <div class="form-text small">Accepted formats: <strong>PDF</strong> or <strong>DOCX</strong> (Max size: 5 MB).</div>
+                                </div>
+
+                                <div class="alert alert-info border-0 rounded-3 small py-2.5 px-3">
+                                    <i class="bi bi-stars text-primary me-1"></i>
+                                    SmartHire AI will scan your resume to evaluate skills & match requirements for this position.
+                                </div>
+
+                                <div class="d-flex justify-content-end gap-2 mt-4">
+                                    <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                                        <i class="bi bi-send me-1"></i> Submit Application
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+{% endblock %}

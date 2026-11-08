@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}413 File Too Large — SmartHire{% endblock %}
+
+{% block content %}
+<div style="min-height: 70vh; display: flex; align-items: center; justify-content: center; padding-top: 80px;">
+    <div class="text-center">
+        <div style="font-size: 6rem; font-weight: 900; background: linear-gradient(135deg, #f59e0b, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1;">
+            413
+        </div>
+        <h4 class="fw-bold mt-3 mb-2">Resume File Exceeds Size Limit</h4>
+        <p class="text-secondary mb-4" style="max-width: 440px; margin: 0 auto;">
+            The uploaded file is larger than the maximum allowed limit of <strong>5 MB</strong>. Please compress your PDF or DOCX resume and try again.
+        </p>
+        <div class="d-flex justify-content-center gap-2">
+            <a href="javascript:history.back()" class="btn btn-outline-secondary rounded-pill px-4">
+                <i class="bi bi-arrow-left me-1"></i> Go Back
+            </a>
+            <a href="{{ url_for('applicant.browse_jobs') }}" class="btn-primary-custom" style="padding: 0.6rem 1.8rem;">
+                <i class="bi bi-briefcase me-1"></i> Browse Jobs
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}

@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+
+{% block title %}Recruiter Dashboard — SmartHire{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3" style="padding-top: 4.5rem;">
+            <div>
+                <h2 class="mb-1"><i class="bi bi-speedometer2 me-2"></i>Recruiter Dashboard</h2>
+                <p class="mb-0">Welcome back, <strong>{{ current_user.name }}</strong>! Manage your job postings and review applicants.</p>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <form method="POST" action="{{ url_for('recruiter.send_daily_digest') }}" class="d-inline">
+                    <button type="submit" class="btn btn-outline-light rounded-pill px-3 py-2 fw-semibold shadow-sm" style="font-size: 0.9rem; border-color: rgba(255,255,255,0.3);" title="Send daily email summary of all candidate activity over the last 24 hours">
+                        <i class="bi bi-envelope-paper-fill me-1 text-warning"></i> Send Daily Summary Now
+                    </button>
+                </form>
+                <a href="{{ url_for('recruiter.create_job') }}" class="btn-primary-custom" style="padding: 0.7rem 1.75rem;">
+                    <i class="bi bi-plus-lg me-1"></i> Post a Job
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboard Body -->
+<div class="container dashboard-body">
+    <!-- Stats Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon" style="background: #eef2ff; color: #4f46e5;">
+                        <i class="bi bi-briefcase-fill"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value">{{ active_jobs }} <small class="text-muted fs-6">/ {{ total_jobs }}</small></div>
+                        <div class="stat-label">Active / Total Jobs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon" style="background: #ecfdf5; color: #10b981;">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value">{{ total_applications }}</div>
+                        <div class="stat-label">Total Applications</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="stat-card stat-card-clickable position-relative" 
+                 role="button" 
+                 tabindex="0"
+                 data-bs-toggle="modal" 
+                 data-bs-target="#shortlistedCandidatesModal" 
+                 title="Click to view all shortlisted candidates grouped by job"
+                 style="cursor: pointer; transition: all 0.2s ease-in-out; border: 1.5px solid transparent;">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon" style="background: #fffbeb; color: #f59e0b;">
+                            <i class="bi bi-star-fill"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">{{ shortlisted_count }}</div>
+                            <div class="stat-label">Shortlisted Candidates</div>
+                        </div>
+                    </div>
+                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2.5 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1 shadow-xs">
+                        View <i class="bi bi-chevron-right"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon" style="background: #ecfeff; color: #06b6d4;">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value">{{ avg_score ~ '%' if avg_score is not none else '—' }}</div>
+                        <div class="stat-label">Avg. Match Score</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jobs Table Card -->
+    <div class="content-card">
+        <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h5><i class="bi bi-briefcase me-2 text-primary"></i>Your Job Postings ({{ jobs|length }})</h5>
+            <a href="{{ url_for('recruiter.create_job') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                <i class="bi bi-plus-circle me-1"></i> Add Position
+            </a>
+        </div>
+        <div class="card-body p-0">
+            {% if jobs %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Position Title</th>
+                                <th>Status</th>
+                                <th>Applicants</th>
+                                <th>Shortlisted</th>
+                                <th>Min Exp</th>
+                                <th>Posted Date</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for job in jobs %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <a href="{{ url_for('recruiter.job_applicants', job_id=job.id) }}" 
+                                           class="fw-bold text-dark text-decoration-none d-inline-flex align-items-center gap-1.5 job-title-link"
+                                           title="Click to view applicants for {{ job.title }}">
+                                            <span>{{ job.title }}</span>
+                                            <i class="bi bi-arrow-right-short text-primary fs-6 opacity-75"></i>
+                                        </a>
+                                        <div class="text-muted small mt-1">
+                                            {% for skill in job.get_skills_list()[:4] %}
+                                                <span class="badge bg-light text-secondary border me-1">{{ skill }}</span>
+                                            {% endfor %}
+                                            {% if job.get_skills_list()|length > 4 %}
+                                                <span class="badge bg-light text-muted border">+{{ job.get_skills_list()|length - 4 }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if job.status == 'open' %}
+                                            <span class="badge bg-success-subtle text-success px-2 py-1 rounded-pill">
+                                                <i class="bi bi-dot me-1"></i>Open
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary px-2 py-1 rounded-pill">
+                                                <i class="bi bi-dot me-1"></i>Closed
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('recruiter.job_applicants', job_id=job.id) }}" class="fw-semibold text-primary text-decoration-none">
+                                            <i class="bi bi-people me-1"></i>{{ job.applications|length }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% set job_shortlisted = job.applications|selectattr('status', 'equalto', 'shortlisted')|list %}
+                                        {% if job_shortlisted|length > 0 %}
+                                            <button type="button" 
+                                                    class="btn p-0 border-0 bg-transparent"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#shortlistedCandidatesModal"
+                                                    title="Click to view {{ job_shortlisted|length }} shortlisted candidate(s) for {{ job.title }}">
+                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1.5 rounded-pill fw-bold shadow-xs d-inline-flex align-items-center gap-1" style="cursor: pointer;">
+                                                    <i class="bi bi-star-fill text-warning"></i> {{ job_shortlisted|length }}
+                                                </span>
+                                            </button>
+                                        {% else %}
+                                            <span class="badge bg-light text-muted px-2.5 py-1.5 rounded-pill border">0</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">{{ job.min_experience_years }} yr{{ 's' if job.min_experience_years != 1 else '' }}</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ job.created_at.strftime('%b %d, %Y') }}</small>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="d-inline-flex gap-1">
+                                            <!-- View Applicants -->
+                                            <a href="{{ url_for('recruiter.job_applicants', job_id=job.id) }}"
+                                               class="btn btn-sm btn-outline-primary"
+                                               title="View & Rank Applicants">
+                                                <i class="bi bi-list-check me-1"></i>Candidates
+                                            </a>
+
+                                            <!-- Edit -->
+                                            <a href="{{ url_for('recruiter.edit_job', job_id=job.id) }}"
+                                               class="btn btn-sm btn-outline-secondary"
+                                               title="Edit Job">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+
+                                            <!-- Toggle Status (Open/Close) -->
+                                            <form method="POST" action="{{ url_for('recruiter.toggle_job_status', job_id=job.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-warning" title="{{ 'Close Job' if job.status == 'open' else 'Reopen Job' }}">
+                                                    <i class="bi bi-{{ 'pause-circle' if job.status == 'open' else 'play-circle' }}"></i>
+                                                </button>
+                                            </form>
+
+                                            <!-- Delete -->
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#deleteJobModal{{ job.id }}"
+                                                    title="Delete Job">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <h6>No jobs posted yet</h6>
+                    <p>Create your first job posting to start receiving applications and let AI screen candidates for you.</p>
+                    <a href="{{ url_for('recruiter.create_job') }}" class="btn-primary-custom" style="padding: 0.6rem 1.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-plus-lg me-1"></i> Post Your First Job
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modals placed outside table to prevent z-index/stacking context issues -->
+{% for job in jobs %}
+    <div class="modal fade" id="deleteJobModal{{ job.id }}" tabindex="-1" aria-labelledby="deleteJobModalLabel{{ job.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg text-start" style="border-radius: var(--radius-lg);">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title text-danger fw-bold" id="deleteJobModalLabel{{ job.id }}">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Job Posting
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-3">
+                    Are you sure you want to delete <strong>"{{ job.title }}"</strong>?
+                    <div class="alert alert-warning mt-3 mb-0 small">
+                        <i class="bi bi-info-circle me-1"></i> This will also permanently remove all <strong>{{ job.applications|length }} applications</strong> submitted for this position.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                    <form method="POST" action="{{ url_for('recruiter.delete_job', job_id=job.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-danger btn-sm rounded-pill px-3">Yes, Delete Job</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+<!-- Shortlisted Candidates Popup Modal -->
+<div class="modal fade" id="shortlistedCandidatesModal" tabindex="-1" aria-labelledby="shortlistedCandidatesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg text-start" style="border-radius: var(--radius-lg); overflow: hidden;">
+            <!-- Modal Header -->
+            <div class="modal-header border-0 pb-3" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0 !important;">
+                <div>
+                    <h5 class="modal-title text-dark fw-bold d-flex align-items-center gap-2 mb-1" id="shortlistedCandidatesModalLabel">
+                        <i class="bi bi-star-fill text-warning"></i>
+                        Shortlisted Candidates
+                        <span class="badge bg-warning text-dark rounded-pill fs-6 px-2.5 py-0.5">
+                            {{ shortlisted_count }}
+                        </span>
+                    </h5>
+                    <p class="text-muted small mb-0">Overview of all shortlisted candidates grouped by job posting</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body p-4" style="background: #ffffff;">
+                {% if shortlisted_jobs_data %}
+                    <!-- Summary Alert Bar -->
+                    <div class="p-3 mb-3.5 rounded-3 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: #fefce8; border: 1px solid #fef08a;">
+                        <div class="d-flex align-items-center gap-2 text-warning-emphasis small fw-semibold">
+                            <i class="bi bi-info-circle-fill fs-6"></i>
+                            <span>You have shortlisted <strong>{{ shortlisted_count }}</strong> candidate{{ 's' if shortlisted_count != 1 else '' }} across <strong>{{ shortlisted_jobs_data|length }}</strong> job role{{ 's' if shortlisted_jobs_data|length != 1 else '' }}.</span>
+                        </div>
+                    </div>
+
+                    <!-- Job-by-Job Candidate Cards -->
+                    <div class="d-flex flex-column gap-3">
+                        {% for item in shortlisted_jobs_data %}
+                            <div class="card border shadow-xs" style="border-radius: 12px; overflow: hidden; border-color: #e2e8f0 !important;">
+                                <!-- Job Header -->
+                                <div class="card-header bg-light py-2.5 px-3.5 d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom">
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="badge bg-primary px-2.5 py-1 rounded-pill small">
+                                            <i class="bi bi-briefcase-fill me-1"></i>Job
+                                        </span>
+                                        <strong class="text-dark fs-6">{{ item.job.title }}</strong>
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning px-2.5 py-1 rounded-pill small fw-bold">
+                                            <i class="bi bi-star-fill text-warning me-1"></i>{{ item.count }} Shortlisted
+                                        </span>
+                                    </div>
+                                    <a href="{{ url_for('recruiter.job_applicants', job_id=item.job.id, status='shortlisted') }}" 
+                                       class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1"
+                                       style="font-size: 0.8rem;">
+                                        <i class="bi bi-people me-1"></i>Open Full Pipeline
+                                    </a>
+                                </div>
+
+                                <!-- Candidate List for this Job -->
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0" style="font-size: 0.88rem;">
+                                        <thead style="background: #f8fafc; font-size: 0.76rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px;">
+                                            <tr>
+                                                <th class="ps-3.5 py-2">Candidate</th>
+                                                <th class="py-2">Contact Email</th>
+                                                <th class="py-2 text-center">AI Match Score</th>
+                                                <th class="py-2">Applied Date</th>
+                                                <th class="text-end pe-3.5 py-2">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for app in item.candidates %}
+                                                <tr>
+                                                    <!-- Candidate Name & Avatar -->
+                                                    <td class="ps-3.5 py-2.5">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-bold shadow-xs flex-shrink-0"
+                                                                 style="width: 30px; height: 30px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); font-size: 0.78rem;">
+                                                                {{ (app.applicant.name or 'C')[0]|upper }}
+                                                            </div>
+                                                            <div>
+                                                                <div class="fw-bold text-dark lh-sm">
+                                                                    {{ app.applicant.name if app.applicant else 'Candidate' }}
+                                                                </div>
+                                                                <small class="text-muted" style="font-size: 0.74rem;">ID #{{ app.id }}</small>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+
+                                                    <!-- Email -->
+                                                    <td class="py-2.5 text-muted small">
+                                                        <i class="bi bi-envelope me-1"></i>{{ app.applicant.email if app.applicant else 'N/A' }}
+                                                    </td>
+
+                                                    <!-- Match Score -->
+                                                    <td class="py-2.5 text-center">
+                                                        {% set score = app.match_score if app.match_score >= 0 else 0 %}
+                                                        <span class="badge px-2.5 py-1 rounded-pill fw-bold
+                                                            {% if score >= 80 %}bg-success-subtle text-success border border-success-subtle
+                                                            {% elif score >= 60 %}bg-info-subtle text-info border border-info-subtle
+                                                            {% elif score >= 40 %}bg-warning-subtle text-warning-emphasis border border-warning-subtle
+                                                            {% else %}bg-danger-subtle text-danger border border-danger-subtle{% endif %}">
+                                                            {{ score }}% Match
+                                                        </span>
+                                                    </td>
+
+                                                    <!-- Applied Date -->
+                                                    <td class="py-2.5 text-muted small">
+                                                        <i class="bi bi-calendar3 me-1"></i>{{ app.applied_at.strftime('%b %d, %Y') if app.applied_at else 'N/A' }}
+                                                    </td>
+
+                                                    <!-- Action Links -->
+                                                    <td class="text-end pe-3.5 py-2.5">
+                                                        <div class="d-inline-flex gap-1.5">
+                                                            <a href="{{ url_for('recruiter.view_resume', app_id=app.id) }}"
+                                                               target="_blank"
+                                                               class="btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-1 text-nowrap"
+                                                               style="font-size: 0.78rem;"
+                                                               title="Open Candidate Resume in new tab">
+                                                                <i class="bi bi-file-earmark-{{ 'pdf text-danger' if app.get_resume_extension() == 'pdf' else 'word text-primary' }} me-1"></i>CV
+                                                            </a>
+                                                            <a href="{{ url_for('recruiter.job_applicants', job_id=item.job.id) }}"
+                                                               class="btn btn-sm btn-primary rounded-pill px-2.5 py-1 text-nowrap"
+                                                               style="font-size: 0.78rem;"
+                                                               title="Review tailored interview questions and candidate details">
+                                                                <i class="bi bi-arrow-right"></i> Review
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="text-center py-5">
+                        <div class="stat-icon mx-auto mb-3" style="background: #fffbeb; color: #f59e0b; width: 64px; height: 64px; font-size: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-star"></i>
+                        </div>
+                        <h6 class="text-dark fw-bold mb-1">No Shortlisted Candidates Yet</h6>
+                        <p class="text-muted small mb-3">You haven't shortlisted any candidates yet. Open your candidate lists on your job postings to review applicants and shortlist top candidates.</p>
+                        {% if jobs %}
+                            <a href="{{ url_for('recruiter.job_applicants', job_id=jobs[0].id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1.5">
+                                <i class="bi bi-list-check me-1"></i>Review Applicants on {{ jobs[0].title }}
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer border-0 pt-2 pb-3 px-4 d-flex justify-content-between align-items-center" style="background: #f8fafc; border-top: 1px solid #e2e8f0 !important;">
+                <span class="text-muted small">
+                    <i class="bi bi-shield-check text-success me-1"></i>Shortlisted candidates have AI interview questions ready.
+                </span>
+                <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-card-clickable {
+    cursor: pointer;
+}
+.stat-card-clickable:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(245, 158, 11, 0.18) !important;
+    border-color: #f59e0b !important;
+}
+.stat-card-clickable:active {
+    transform: translateY(-1px);
+}
+.job-title-link {
+    transition: color 0.15s ease-in-out;
+}
+.job-title-link:hover {
+    color: #2563eb !important;
+}
+.job-title-link:hover i {
+    transform: translateX(2px);
+    transition: transform 0.15s ease-in-out;
+}
+</style>
+
+{% endblock %}

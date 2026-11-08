@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Log In — SmartHire{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-9 col-xl-8">
+                <div class="auth-card">
+                    <div class="row g-0">
+                        <!-- Left: Image Panel -->
+                        <div class="col-lg-5 d-none d-lg-block">
+                            <div class="auth-image">
+                                <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=600&q=80"
+                                     alt="Professional at work">
+                                <h3>Welcome Back</h3>
+                                <p>Log in to continue managing your hiring pipeline.</p>
+                            </div>
+                        </div>
+
+                        <!-- Right: Form -->
+                        <div class="col-lg-7">
+                            <div class="auth-form-section">
+                                <div class="text-center text-lg-start mb-1">
+                                    <a href="{{ url_for('auth.home') }}" class="text-decoration-none"
+                                       style="color: var(--primary); font-weight: 700; font-size: 1.25rem;">
+                                        <i class="bi bi-lightning-charge-fill me-1"></i>SmartHire
+                                    </a>
+                                </div>
+                                <h2>Log in to your account</h2>
+                                <p class="auth-subtitle">Don't have an account? <a href="{{ url_for('auth.register') }}" style="color: var(--primary); font-weight: 600;">Sign up free</a></p>
+
+                                <form method="POST" novalidate>
+                                    {{ form.hidden_tag() }}
+
+                                    <div class="form-floating-custom">
+                                        <label for="email">{{ form.email.label.text }}</label>
+                                        {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), id="email") }}
+                                        {% for error in form.email.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <div class="form-floating-custom">
+                                        <label for="password">{{ form.password.label.text }}</label>
+                                        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), id="password") }}
+                                        {% for error in form.password.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <button type="submit" class="btn-auth mt-2">
+                                        <i class="bi bi-box-arrow-in-right me-1"></i> Log In
+                                    </button>
+                                </form>
+
+                                <div class="auth-divider">
+                                    <span>Secure Login</span>
+                                </div>
+
+                                <div class="d-flex justify-content-center gap-4" style="font-size: 0.8rem; color: var(--gray-500);">
+                                    <span><i class="bi bi-shield-check me-1"></i>CSRF Protected</span>
+                                    <span><i class="bi bi-lock me-1"></i>Encrypted</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}

@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}Email Notifications &amp; System Alerts — SmartHire{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header with Proper Navbar Offset -->
+<div class="dashboard-header">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3" style="padding-top: 4.5rem;">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    {% if current_user.is_recruiter() %}
+                        <a href="{{ url_for('recruiter.dashboard') }}" class="btn btn-sm btn-outline-light rounded-pill px-3">
+                            <i class="bi bi-arrow-left me-1"></i> Recruiter Dashboard
+                        </a>
+                    {% elif current_user.is_admin() %}
+                        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-light rounded-pill px-3">
+                            <i class="bi bi-arrow-left me-1"></i> Admin Dashboard
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('applicant.dashboard') }}" class="btn btn-sm btn-outline-light rounded-pill px-3">
+                            <i class="bi bi-arrow-left me-1"></i> Applicant Dashboard
+                        </a>
+                    {% endif %}
+                    <span class="badge bg-primary text-white px-3 py-1.5 rounded-pill fw-semibold">
+                        {{ emails|length }} Messages Logged
+                    </span>
+                </div>
+                <h2 class="mb-1 text-white fw-bold">
+                    <i class="bi bi-envelope-paper-heart me-2 text-primary"></i>Automated Email Notifications
+                </h2>
+                <p class="mb-0 text-white-50">
+                    Audit and inspect all transactional emails dispatched for <strong class="text-white">{{ current_user.email }}</strong>
+                </p>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2">
+                {% if is_smtp_configured %}
+                    <span class="badge bg-success text-white px-3 py-2 rounded-pill fw-medium d-inline-flex align-items-center gap-1.5">
+                        <span class="spinner-grow spinner-grow-sm text-light" style="width: 8px; height: 8px;" role="status"></span>
+                        Live Gmail SMTP Active
+                    </span>
+                {% else %}
+                    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-medium d-inline-flex align-items-center gap-1.5">
+                        <i class="bi bi-cpu-fill"></i> Simulation &amp; Audit Mode
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboard Body -->
+<div class="container dashboard-body">
+    <!-- Stat Cards Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon" style="background: #eef2ff; color: #4f46e5;">
+                        <i class="bi bi-envelope-check-fill"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value">{{ emails|length }}</div>
+                        <div class="stat-label">Total Notifications Logged</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon" style="background: {{ '#ecfdf5' if is_smtp_configured else '#fef3c7' }}; color: {{ '#10b981' if is_smtp_configured else '#d97706' }};">
+                        <i class="bi {{ 'bi-cloud-check-fill' if is_smtp_configured else 'bi-shield-check' }}"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value" style="font-size: 1.35rem;">{{ 'Live SMTP' if is_smtp_configured else 'Simulated &amp; Verified' }}</div>
+                        <div class="stat-label">Delivery Channel Status</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon" style="background: #ecfeff; color: #06b6d4;">
+                        <i class="bi bi-person-badge-fill"></i>
+                    </div>
+                    <div style="min-width: 0;">
+                        <div class="stat-value text-truncate" style="font-size: 1.1rem;" title="{{ current_user.email }}">
+                            {{ current_user.email }}
+                        </div>
+                        <div class="stat-label text-capitalize">{{ current_user.role }} Account</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SMTP Setup Instructions Card (Collapsible) -->
+    <div class="content-card mb-4">
+        <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2" 
+             style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#smtpGuideCollapse" aria-expanded="false">
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle p-1.5 d-inline-flex align-items-center justify-content-center" style="background: rgba(79,70,229,0.1); color: #4f46e5;">
+                    <i class="bi bi-gear-wide-connected"></i>
+                </div>
+                <h5 class="mb-0">
+                    How Direct In-Inbox Delivery Works
+                    {% if not is_smtp_configured %}
+                        <span class="badge bg-warning-subtle text-warning-emphasis ms-2 small fw-normal">Setup Google App Password</span>
+                    {% else %}
+                        <span class="badge bg-success-subtle text-success ms-2 small fw-normal">Connected to {{ smtp_sender }}</span>
+                    {% endif %}
+                </h5>
+            </div>
+            <button class="btn btn-sm btn-link text-decoration-none p-0">
+                <i class="bi bi-chevron-down text-secondary"></i>
+            </button>
+        </div>
+        <div class="collapse {{ 'show' if not is_smtp_configured else '' }}" id="smtpGuideCollapse">
+            <div class="card-body p-4 border-top">
+                <div class="row g-4 align-items-center">
+                    <div class="col-lg-7">
+                        <h6 class="fw-bold text-dark mb-2">Automated Transactional Emails in SmartHire</h6>
+                        <p class="text-secondary small mb-3 lh-base">
+                            SmartHire automatically fires transactional notifications whenever:
+                        </p>
+                        <ul class="text-secondary small ps-3 mb-3">
+                            <li class="mb-1"><strong>An applicant applies:</strong> Instant receipt email to the applicant + new candidate alert with AI score to the recruiter.</li>
+                            <li class="mb-1"><strong>A recruiter shortlists:</strong> Congratulatory email with link to the tailored interview prep guide.</li>
+                            <li class="mb-1"><strong>A recruiter holds or rejects:</strong> Status update email keeping candidates informed.</li>
+                        </ul>
+                        <div class="p-3 rounded-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                            <strong class="d-block small text-dark mb-1"><i class="bi bi-key-fill text-primary me-1"></i>Steps for Direct Delivery to Your Real Gmail Inbox:</strong>
+                            <ol class="small text-secondary ps-3 mb-0">
+                                <li>Turn ON 2-Step Verification in your Google Account.</li>
+                                <li>Generate a 16-character App Password at <a href="https://myaccount.google.com/apppasswords" target="_blank" class="fw-semibold text-primary">myaccount.google.com/apppasswords</a>.</li>
+                                <li>Paste the credentials into <code>.env</code> file at project root and save!</li>
+                            </ol>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="p-3 rounded-3 text-light" style="background: #0f172a; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.82rem;">
+                            <div class="d-flex justify-content-between text-muted small pb-2 mb-2 border-bottom border-secondary">
+                                <span>.env Configuration</span>
+                                <span class="badge bg-secondary">smtp.gmail.com</span>
+                            </div>
+                            <div style="color: #94a3b8;">
+                                <span style="color: #38bdf8;">MAIL_SERVER</span>=smtp.gmail.com<br>
+                                <span style="color: #38bdf8;">MAIL_PORT</span>=587<br>
+                                <span style="color: #38bdf8;">MAIL_USE_TLS</span>=True<br>
+                                <span style="color: #38bdf8;">MAIL_USERNAME</span>=your-email@gmail.com<br>
+                                <span style="color: #38bdf8;">MAIL_PASSWORD</span>=abcd efgh ijkl mnop<br>
+                                <span style="color: #38bdf8;">MAIL_DEFAULT_SENDER</span>="SmartHire &lt;your-email@gmail.com&gt;"
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Notification Feed -->
+    <div class="content-card mb-5">
+        <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h5 class="mb-0"><i class="bi bi-bell-fill me-2 text-primary"></i>Notification Stream</h5>
+                <small class="text-muted">Real-time log of generated and sent messages</small>
+            </div>
+            {% if emails %}
+                <span class="badge bg-light text-secondary border px-3 py-1.5 rounded-pill">
+                    Showing {{ emails|length }} recent emails
+                </span>
+            {% endif %}
+        </div>
+        <div class="card-body p-0">
+            {% if emails %}
+                <div class="list-group list-group-flush">
+                    {% for email in emails %}
+                        {% set is_shortlist = 'Shortlisted' in email.subject or 'shortlist' in email.subject.lower() %}
+                        {% set is_received = 'Received' in email.subject or 'applied' in email.subject.lower() %}
+                        {% set is_hold = 'On Hold' in email.subject or 'hold' in email.subject.lower() %}
+                        {% set is_rejected = 'Update' in email.subject and 'Selected' in email.badge_text %}
+                        
+                        <div class="list-group-item p-3 p-md-4 transition-hover" style="border-left: 4px solid {{ '#10b981' if is_shortlist else ('#3b82f6' if is_received else ('#f59e0b' if is_hold else '#6366f1')) }};">
+                            <div class="d-flex align-items-start gap-3 flex-wrap flex-md-nowrap">
+                                <!-- Category Icon Badge -->
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
+                                     style="width: 44px; height: 44px; background: {{ '#ecfdf5' if is_shortlist else ('#eff6ff' if is_received else ('#fef3c7' if is_hold else '#eef2ff')) }}; color: {{ '#10b981' if is_shortlist else ('#3b82f6' if is_received else ('#d97706' if is_hold else '#4f46e5')) }}; font-size: 1.25rem;">
+                                    {% if is_shortlist %}
+                                        <i class="bi bi-trophy-fill"></i>
+                                    {% elif is_received %}
+                                        <i class="bi bi-file-earmark-check-fill"></i>
+                                    {% elif is_hold %}
+                                        <i class="bi bi-pause-circle-fill"></i>
+                                    {% elif is_rejected %}
+                                        <i class="bi bi-info-circle-fill"></i>
+                                    {% else %}
+                                        <i class="bi bi-envelope-fill"></i>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Center Info -->
+                                <div class="flex-grow-1" style="min-width: 0;">
+                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+                                        <h6 class="mb-0 fw-bold text-dark text-break">
+                                            {{ email.subject }}
+                                        </h6>
+                                        <span class="badge {{ 'bg-success-subtle text-success border border-success-subtle' if email.status == 'delivered' else 'bg-primary-subtle text-primary border border-primary-subtle' }} px-2.5 py-1 rounded-pill small">
+                                            <i class="bi {{ 'bi-check2-all me-1' if email.status == 'delivered' else 'bi-cpu me-1' }}"></i>
+                                            {{ 'Delivered via Gmail' if email.status == 'delivered' else 'Verified &amp; Logged' }}
+                                        </span>
+                                    </div>
+
+                                    <div class="d-flex align-items-center gap-3 flex-wrap text-muted small mb-2">
+                                        <span><i class="bi bi-person-fill text-secondary me-1"></i>Recipient: <strong class="text-dark">{{ email.recipient_email }}</strong></span>
+                                        <span>&bull;</span>
+                                        <span><i class="bi bi-clock-history text-secondary me-1"></i>{{ email.sent_at.strftime('%b %d, %Y at %I:%M %p') }}</span>
+                                    </div>
+
+                                    <!-- Collapsible Text Snippet -->
+                                    <div class="p-3 rounded-3 mt-2 text-secondary small lh-base" style="background: #f8fafc; border: 1px solid #e2e8f0; white-space: pre-line;">
+                                        {{ email.details }}
+                                    </div>
+                                </div>
+
+                                <!-- Action Button -->
+                                <div class="flex-shrink-0 align-self-start pt-1">
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#emailModal{{ email.id }}">
+                                        <i class="bi bi-aspect-ratio me-1"></i>Preview
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state py-5 text-center">
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center p-4 mb-3" style="background: #f1f5f9; color: #94a3b8; font-size: 2.5rem;">
+                        <i class="bi bi-inbox-fill"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">No notifications generated yet</h5>
+                    <p class="text-secondary small mb-3" style="max-width: 440px; margin: 0 auto;">
+                        When you submit a resume or when a recruiter shortlists, puts on hold, or updates an application status, automated notification cards appear here in real-time.
+                    </p>
+                    <a href="{{ url_for('applicant.browse_jobs') }}" class="btn-primary-custom" style="padding: 0.6rem 1.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-briefcase me-1"></i> Explore &amp; Apply to Jobs
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal Previews (Placed Outside Container for Stacking Context Safety) -->
+{% for email in emails %}
+    <div class="modal fade" id="emailModal{{ email.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg text-start" style="border-radius: 16px; overflow: hidden;">
+                <!-- Header replicating email theme -->
+                <div class="modal-header text-white" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 1.5rem;">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fs-4 text-primary">⚡</span>
+                        <div>
+                            <h5 class="modal-title fw-bold mb-0 text-white">SmartHire Email Preview</h5>
+                            <small class="text-white-50">{{ email.subject }}</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-4" style="background: #f8fafc;">
+                    <div class="bg-white p-4 rounded-3 border shadow-sm mb-3">
+                        <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom flex-wrap gap-2">
+                            <div>
+                                <small class="text-muted d-block">Delivered To</small>
+                                <span class="fw-bold text-dark">{{ email.recipient_email }}</span>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted d-block">Dispatched On</small>
+                                <span class="small text-secondary">{{ email.sent_at.strftime('%b %d, %Y %I:%M %p') }}</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1.5 rounded-pill small fw-semibold text-uppercase">
+                                {{ email.badge_text or 'Notification' }}
+                            </span>
+                        </div>
+
+                        <h5 class="fw-bold text-dark mb-3">{{ email.headline or email.subject }}</h5>
+
+                        <div class="text-secondary lh-base mb-4" style="font-size: 0.95rem; white-space: pre-line;">
+                            {{ email.details }}
+                        </div>
+
+                        <div class="text-center pt-3 border-top">
+                            <a href="{{ url_for('applicant.dashboard') }}" class="btn btn-primary px-4 py-2 rounded-pill fw-semibold" style="font-size: 0.9rem;">
+                                Go to SmartHire Dashboard
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="p-2.5 rounded-2 text-center text-muted small">
+                        Status: <span class="badge {{ 'bg-success text-white' if email.status == 'delivered' else 'bg-info text-dark' }}">{{ email.status }}</span> &bull; 
+                        Generated automatically by SmartHire Recruitment Platform.
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+{% endblock %}
